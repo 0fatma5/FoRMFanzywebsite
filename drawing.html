@@ -1,0 +1,518 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shape Drawing </title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+
+
+</head>
+<body>
+    <div class="container">
+    <div class="links">
+        <nav>
+            <a href="home.html" class="nav-link">Home</a>
+            <a href="drawing.html" class="nav-link">Drawing</a>
+        </nav>
+    </div>
+    <label for="shapeInput">Shape Name:</label>
+    <input type="text" id="shapeInput" placeholder="circle, square, rectangle, etc.">
+    
+    <label for="colorInput">Color (Hex):</label>
+    <input type="text" id="colorInput" placeholder="#FF5733">
+    
+    <label for="dimension1Input">Dimension 1 (Radius/Width):</label>
+    <input type="number" id="dimension1Input" placeholder="Enter dimension 1">
+    
+    <label for="dimension2Input">Dimension 2 (Height):</label>
+    <input type="number" id="dimension2Input" placeholder="Enter dimension 2 (0 if not needed)">
+
+    <label for="iamgeInput">Upload a high-contrast black and white image with drawn lines to extract and render the lines:</label>
+<input type="file" id="imageUpload" accept="image/*">
+
+<label for="colorPicker">Choose Shape Color:</label>
+<input type="color" id="colorPicker" value="#0000ff"><br><br>
+
+<canvas id="drawingCanvas" width="600" height="400" style="border:1px solid #000;"></canvas>
+
+    <button class="shape-btn" id="draw-2d">Draw 2D Shape</button>
+    
+    <canvas id="canvas" width="600" height="400" style="background-color: white; border:1px solid #000;"></canvas>
+    <button class="shape-btn" id="draw-3d">Draw 3D Shape</button>
+
+    
+    <!-- <canvas id="canvas" width="600" height="400"></canvas> -->
+    <div id="threeDContainer" style="width: 600px; height: 400px;"></div>
+
+    <script type="module">
+       import * as THREE from './node_modules/three/build/three.module.js'; 
+
+        // Get the canvas element and setup 2D context
+        let canvas = document.getElementById("canvas");
+        let context = canvas.getContext("2d");
+
+        // Variables to hold 2D shape details for animation
+        let shape2D = null;
+        let shape2Ddx = 2; // Movement speed in the x-direction
+        let shape2Ddy = 2; // Movement speed in the y-direction
+
+        // Setup scene, camera, and renderer for Three.js
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xffffff); // Set the background to white
+        
+        const camera = new THREE.PerspectiveCamera(75, 600 / 400, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(600, 400);
+        document.getElementById('threeDContainer').appendChild(renderer.domElement);
+        
+        // Add a light to the scene
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); // Soft white light
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5); // Directional light
+        directionalLight.position.set(1, 1, 1).normalize();
+        scene.add(directionalLight);
+
+        // Ensure camera is positioned correctly to view shapes
+        camera.position.set(0, 0, 100);
+
+        // Variables to hold 3D shape for animation
+        let shape3D = null;
+
+        function createPolygonShape(sides, radius) {
+    const shape = new THREE.Shape();
+    const angleStep = (Math.PI * 2) / sides;
+
+    for (let i = 0; i < sides; i++) {
+        const angle = i * angleStep;
+        const x = radius * Math.cos(angle);
+        const y = radius * Math.sin(angle);
+
+        if (i === 0) {
+            shape.moveTo(x, y); // Move to the first vertex
+        } else {
+            shape.lineTo(x, y);
+        }
+    }
+    shape.closePath();
+    return shape;
+}
+        function createRhombus(width, depth) {
+    const rhombusShape = new THREE.Shape();
+    
+    // Define the rhombus shape using width and height
+    rhombusShape.moveTo(0, width / 2); // Top vertex
+    rhombusShape.lineTo(width / 2, 0); // Right vertex
+    rhombusShape.lineTo(0, -width / 2); // Bottom vertex 
+    rhombusShape.lineTo(-width / 2, 0); // Left vertex
+    rhombusShape.closePath();
+
+    // Extrude the shape
+    return new THREE.ExtrudeGeometry(rhombusShape, {
+        depth: depth, // Depth of the extrusion
+        bevelEnabled: false
+    });
+}
+
+function createTrapezoid(topWidth, bottomWidth, height) {
+    const trapezoidShape = new THREE.Shape();
+    
+    // Define the trapezoid shape
+    trapezoidShape.moveTo(-topWidth / 2, height / 2); // Top left
+    trapezoidShape.lineTo(topWidth / 2, height / 2); // Top right
+    trapezoidShape.lineTo(bottomWidth / 2, -height / 2); // Bottom right
+    trapezoidShape.lineTo(-bottomWidth / 2, -height / 2); // Bottom left
+    trapezoidShape.closePath();
+
+    // Extrude the shape
+    return new THREE.ExtrudeGeometry(trapezoidShape, {
+        depth: height, // Depth of the extrusion
+        bevelEnabled: false
+    });
+}
+        // Function to create a 3D heart shape
+        function createHeartGeometry(width, height) {
+            const heartShape = new THREE.Shape();
+            heartShape.moveTo(0, height / 5);
+            heartShape.bezierCurveTo(0, height / 5, -width / 10, 0, -width / 5, 0);
+            heartShape.bezierCurveTo(-width, 0, -width, height / 3, -width, height / 3);
+            heartShape.bezierCurveTo(-width, (2 * height) / 3, -width / 3, height, 0, height);
+            heartShape.bezierCurveTo(width / 3, height, width, (2 * height) / 3, width, height / 3);
+            heartShape.bezierCurveTo(width, height / 3, width, 0, width / 5, 0);
+            heartShape.bezierCurveTo(width / 10, 0, 0, height / 5, 0, height / 5);
+            return new THREE.ShapeGeometry(heartShape);
+        }
+
+        // Function to draw the selected shape in 3D based on user input
+        function draw3DShape(shapeType, color, dimension1, dimension2) {
+            let geometry;
+            const material = new THREE.MeshStandardMaterial({ color: parseInt(color.replace('#', ''), 16) });
+
+            // Choose geometry based on shape type
+            switch (shapeType) {
+                case 'sphere':
+                    geometry = new THREE.SphereGeometry(dimension1, 32, 16);
+                    break;
+                case 'cube':
+                    geometry = new THREE.BoxGeometry(dimension1, dimension1, dimension1);
+                    break;
+                case 'cone':
+                    geometry = new THREE.ConeGeometry(dimension1, dimension2, 32);
+            
+                    break;
+                case 'cuboid':
+                    geometry = new THREE.BoxGeometry(dimension1, dimension2, dimension1); // Use dimension1 for depth
+                    break;
+                case 'capsule':
+                    geometry = new THREE.CapsuleGeometry(dimension1, dimension2, 4, 8); 
+                    break;
+                case 'wheel':
+                    geometry = new THREE.CylinderGeometry(dimension1, dimension1, dimension2, 32);
+                    break;
+                case 'cylinder':
+                    geometry = new THREE.CylinderGeometry(dimension1, dimension1, dimension2, 32); 
+                    break;
+                case 'plane':
+                    geometry = new THREE.PlaneGeometry(dimension1, dimension2);
+                    break;
+                case 'ring':
+                    geometry = new THREE.RingGeometry(dimension1, dimension2, 32);
+                    break;
+                case 'torus':
+                    geometry = new THREE.TorusGeometry(dimension1, dimension2, 16, 100);
+                    break;
+                case 'pentagon':
+                    geometry = new THREE.ExtrudeGeometry(createPolygonShape(5, dimension1), { depth: dimension2, bevelEnabled: false });
+                    break;
+                case 'hexagon':
+                    geometry = new THREE.ExtrudeGeometry(createPolygonShape(6, dimension1), { depth: dimension2, bevelEnabled: false });
+                    break;
+                case 'octagon':
+                    geometry = new THREE.ExtrudeGeometry(createPolygonShape(8, dimension1), { depth: dimension2, bevelEnabled: false });
+                    break;
+
+                case 'rhombus':
+                    geometry = createRhombus(dimension1, dimension2); // dimension1 = width, dimension2 = depth
+                    break;
+                case 'trapezoid':
+                    geometry = createTrapezoid(dimension1, dimension2, dimension2); // dimension1 = top width, dimension2 = height
+                    break;
+                case 'heart':
+                    geometry = createHeartGeometry(dimension1, dimension2);
+                    break;
+                default:
+                    alert("Invalid shape type selected.");
+                    return;
+    }
+            // Create mesh and add it to the scene
+            shape3D = new THREE.Mesh(geometry, material);
+            scene.add(shape3D);
+            console.log(`Drawn ${shapeType} with dimensions: ${dimension1}, ${dimension2}`); // Debug log
+            
+        }
+    
+        // Handle button click to draw 3D shapes
+        // document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('draw-3d').addEventListener('click', () => {
+                const shapeType = document.getElementById('shapeInput').value.toLowerCase();
+                const color = document.getElementById('colorInput').value.trim();
+                const dimension1 = parseFloat(document.getElementById('dimension1Input').value);
+                const dimension2 = parseFloat(document.getElementById('dimension2Input').value) || 0;
+
+                // Clear any existing shapes in the 3D scene
+                while (scene.children.length > 2) {  // Keep lights
+                    let object = scene.children[scene.children.length - 1];
+                    scene.remove(object);
+                }
+            // });
+            // Map 2D shape types to 3D shape types
+   // Map 2D shape types to 3D shape types
+let threeDShapeType;
+switch (shapeType) {
+    case 'circle':
+        threeDShapeType = 'sphere';
+        break;
+    case 'square':
+        threeDShapeType = 'cube';
+        break;
+    case 'rectangle':
+        threeDShapeType = 'cuboid';
+        break;
+    case 'triangle':
+        threeDShapeType = 'cone';
+        break;
+    case 'rhombus':
+        threeDShapeType = 'rhombus';
+        break;
+    case 'trapezoid':
+        threeDShapeType = 'trapezoid'; 
+        break;
+    case 'pentagon':
+        threeDShapeType = 'pentagon'; 
+        break;
+    case "hexagon":
+        threeDShapeType = 'hexagon'; 
+        break;
+    case "octagon":
+        threeDShapeType = 'octagon'; 
+        break;
+    case "capsule":
+        threeDShapeType = 'capsule'; 
+        break;
+    case "wheel":
+        threeDShapeType = 'wheel';
+        break;
+    case "cylinder":
+        threeDShapeType = 'cylinder'; 
+        break;
+    case "plane":
+        threeDShapeType = 'plane'; 
+        break;
+    case "ring":
+        threeDShapeType = 'torus'; 
+        break;
+    case "torus":
+        threeDShapeType = 'torus';
+        break;
+    case 'heart':
+        threeDShapeType='heart';
+    default:
+        alert("Invalid shape!");
+        return;
+}
+
+
+            // Draw the 3D shape
+            draw3DShape(threeDShapeType, color, dimension1, dimension2);
+
+            // Ensure camera is positioned to view the shape
+            camera.position.set(0, 0, dimension1 * 3 + 50); // Dynamically adjust based on shape size
+            
+        });
+
+        // Shape class for 2D drawing
+        class Shape {
+            constructor(xpos, ypos, dimension1, dimension2, color, shapeType) {
+                this.xpos = xpos;
+                this.ypos = ypos;
+                this.dimension1 = dimension1; // Could be radius (for circle) or width (for rectangle)
+                this.dimension2 = dimension2; // Could be height (for rectangle) or ignored for circle
+                this.color = color;
+                this.shapeType = shapeType; // Circle, Rectangle, Square, Triangle
+            }
+            drawPolygon(context, sides, radius) {
+        const angle = Math.PI * 2 / sides;
+        context.moveTo(this.xpos + radius * Math.cos(0), this.ypos + radius * Math.sin(0));
+
+        for (let i = 1; i <= sides; i++) {
+            context.lineTo(this.xpos + radius * Math.cos(i * angle), this.ypos + radius * Math.sin(i * angle));
+        }
+    }
+
+            draw(context) {
+                context.beginPath();
+                context.strokeStyle = this.color;
+                context.fillStyle = this.color;
+                context.lineWidth = 5;
+
+                switch (this.shapeType) {
+                    case "circle":
+                        context.arc(this.xpos, this.ypos, this.dimension1, 0, Math.PI * 2, false);
+                        break;
+                    case "rectangle":
+                        context.rect(this.xpos, this.ypos, this.dimension1, this.dimension2);
+                        break;
+                    case "square":
+                        context.rect(this.xpos, this.ypos, this.dimension1, this.dimension1);
+                        break;
+                    case "heart":
+                    // Move to the starting point
+                        context.moveTo(this.xpos, this.ypos + this.dimension1);
+            
+                    // Left half of the heart
+                        context.arc(
+                        this.xpos - this.dimension1 / 2,  // x position for left circle
+                        this.ypos,                        // y position for left circle
+                        this.dimension1 / 2,              // radius
+                        0, 
+                        Math.PI, 
+                        true
+                        );
+            
+                    // Right half of the heart
+                        context.arc(
+                        this.xpos + this.dimension1 / 2,  // x position for right circle
+                        this.ypos,                        // y position for right circle
+                        this.dimension1 / 2,              // radius
+                        0, 
+                        Math.PI, 
+                        true
+                    );
+            
+                    // Draw the bottom point of the heart
+                       context.lineTo(this.xpos, this.ypos + this.dimension1 * 1.5);
+                        context.closePath();
+                    break;
+                    case "triangle":
+                        context.moveTo(this.xpos, this.ypos - this.dimension1); // Top vertex
+                        context.lineTo(this.xpos - this.dimension1, this.ypos + this.dimension1); // Bottom left vertex
+                        context.lineTo(this.xpos + this.dimension1, this.ypos + this.dimension1); // Bottom right vertex
+                        context.closePath();
+                        break;
+                    case "rhombus":
+                        context.moveTo(this.xpos, this.ypos - this.dimension1);
+                        context.lineTo(this.xpos + this.dimension1, this.ypos);
+                        context.lineTo(this.xpos, this.ypos + this.dimension1);
+                        context.lineTo(this.xpos - this.dimension1, this.ypos);
+                        context.closePath();
+                        break;
+                    case "trapezoid":
+                        context.moveTo(this.xpos - this.dimension1, this.ypos);
+                        context.lineTo(this.xpos + this.dimension1, this.ypos);
+                        context.lineTo(this.xpos + this.dimension1 / 2, this.ypos + this.dimension2);
+                        context.lineTo(this.xpos - this.dimension1 / 2, this.ypos + this.dimension2);
+                        context.closePath();
+                        break;       
+                    case "pentagon":
+                        this.drawPolygon(context, 5, this.dimension1);
+                        break;
+                    case "hexagon":
+                        this.drawPolygon(context, 6, this.dimension1);
+                        break;
+                    case "octagon":
+                        this.drawPolygon(context, 8, this.dimension1);
+                        break;
+                    case "wheel":
+                        context.arc(this.xpos, this.ypos, this.dimension1, 0, Math.PI * 2, false);
+                        context.stroke(); // Draw outer circle
+                        context.beginPath(); // Start a new path for inner circle
+                        context.arc(this.xpos, this.ypos, this.dimension1 / 2, 0, Math.PI * 2, false);
+                        break;
+                    case "capsule":
+                        context.beginPath();
+                        context.moveTo(this.xpos, this.ypos - this.dimension2 / 2); // Move to the top
+                        context.arc(this.xpos, this.ypos - this.dimension2 / 2, this.dimension1, 0, Math.PI, false); // Top
+                        context.lineTo(this.xpos + this.dimension1, this.ypos + this.dimension2 / 2); // Right
+                        context.arc(this.xpos, this.ypos + this.dimension2 / 2, this.dimension1, Math.PI, 0, false); // Bottom
+                        context.closePath();
+                        break;
+                    case "ring":
+                        context.beginPath();
+                        context.arc(this.xpos, this.ypos, this.dimension1, 0, Math.PI * 2, false); // Outer circle
+                        context.moveTo(this.xpos, this.ypos);
+                        context.arc(this.xpos, this.ypos, this.dimension2, 0, Math.PI * 2, true); // Inner circle
+                        break;
+                    case "torus":
+                        context.beginPath();
+                        context.arc(this.xpos, this.ypos, this.dimension1, 0, Math.PI * 2, false); // Outer circle
+                        context.moveTo(this.xpos, this.ypos);
+                        context.arc(this.xpos, this.ypos, this.dimension1 - this.dimension2, 0, Math.PI * 2, true); // Inner circle
+                        break;
+                    case "plane":
+                        context.rect(this.xpos - this.dimension1 / 2, this.ypos - this.dimension2 / 2, this.dimension1, this.dimension2);
+                        break;
+                    case "cylinder":
+                         // Draw the top ellipse
+                        context.beginPath();
+                        context.ellipse(this.xpos, this.ypos - this.dimension2 / 2, this.dimension1, this.dimension2 / 2, 0, 0, Math.PI * 2);
+                        context.fill();
+                        context.stroke();
+
+    // Draw the sides
+                        context.beginPath();
+                        context.moveTo(this.xpos - this.dimension1, this.ypos - this.dimension2 / 2);
+                        context.lineTo(this.xpos - this.dimension1, this.ypos + this.dimension2 / 2);
+                        context.lineTo(this.xpos + this.dimension1, this.ypos + this.dimension2 / 2);
+                        context.lineTo(this.xpos + this.dimension1, this.ypos - this.dimension2 / 2);
+                        context.closePath();
+                        context.fill();
+                        context.stroke();
+
+    // Draw the bottom ellipse
+                        context.beginPath();
+                        context.ellipse(this.xpos, this.ypos + this.dimension2 / 2, this.dimension1, this.dimension2 / 2, 0, 0, Math.PI * 2);
+                        context.fill();
+                        context.stroke();
+                        break;
+
+    
+                    default:
+                        console.log("Unknown shape type.");
+                }
+
+                context.stroke();
+                context.fill();
+                context.closePath();
+            }
+
+            move(canvasWidth, canvasHeight) {
+                // Move the shape and bounce off the walls
+                this.xpos += shape2Ddx;
+                this.ypos += shape2Ddy;
+
+                // Bounce off walls
+                if (this.xpos + this.dimension1 > canvasWidth || this.xpos - this.dimension1 < 0) {
+                    shape2Ddx = -shape2Ddx;
+                }
+                if (this.ypos + this.dimension1 > canvasHeight || this.ypos - this.dimension1 < 0) {
+                    shape2Ddy = -shape2Ddy;
+                }
+            }
+        }
+
+            // Handle button click to draw 2D shapes
+            document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('draw-2d').addEventListener('click', () => {
+                const shapeType = document.getElementById('shapeInput').value.toLowerCase();
+                const color2D = document.getElementById('colorInput').value.trim();
+                const dimension1 = parseFloat(document.getElementById('dimension1Input').value);
+                const dimension2 = parseFloat(document.getElementById('dimension2Input').value) || 0;
+
+                if (!dimension1 || (shapeType === "rectangle" && !dimension2)) {
+                    alert("Please enter valid dimensions.");
+                    return;
+                }
+
+                // Create and store the shape object for animation
+                shape2D = new Shape(250, 250, dimension1, dimension2, color2D, shapeType);
+                animate2D(); // Start animation
+            });
+        });
+
+        // Animation loop for 2D shapes
+        function animate2D() {
+            requestAnimationFrame(animate2D);
+            if (shape2D) {
+                context.fillStyle = 'white';
+                context.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+                shape2D.move(canvas.width, canvas.height); // Move the shape
+                shape2D.draw(context); // Redraw the shape
+            }
+        }
+
+        // Animation loop for 3D shapes
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            if (shape3D) {
+                shape3D.rotation.x += 0.01; // Rotate shape around the x-axis
+                shape3D.rotation.y += 0.01; // Rotate shape around the y-axis
+            }
+            renderer.render(scene, camera);
+        }
+
+        // Start the animation loops
+        animate2D();
+        animate3D();
+    </script>
+    </div>
+    <script src="nav.js"></script>
+    <script src="iamge.js"></script>
+    <script src="draw.js"></script>
+
+</body>
+</html>
+
