@@ -2,6 +2,12 @@
 
 A creative coding playground built with **vanilla JavaScript, the HTML Canvas API, and Three.js**. Explore shapes in 2D and 3D, draw freehand, adjust colors and dimensions, and export PNG images.
 
+## Demo video
+
+[**Watch the FormFanz Shape Studio demo (MP4)**](https://github.com/user-attachments/assets/74f3146c-148b-4a83-a114-2a3d9039ce18)
+
+This short walkthrough shows the refreshed interface, 2D shape customization, freehand sketching, and PNG download. **3D is not shown in the video** and still needs manual browser/WebGL verification before merging.
+
 ## Features
 
 - **2D shapes:** Circle, square, rectangle, triangle, pentagon, hexagon, star, and heart.
@@ -56,7 +62,7 @@ Tests cover geometry utilities, input validation, and export filename generation
 
 ## Deployment and portfolio suggestions
 
-After manual verification, publish the site using GitHub Pages (entry point: `index.html`) and add the live URL and a real demo video. Suggested repo description:
+After manual verification, publish the site using GitHub Pages (entry point: `index.html`) and add the live URL and a screenshot; the demo video is linked above. Suggested repo description:
 
 > Interactive 2D, 3D and freehand shape studio built with JavaScript, Canvas and Three.js.
 
