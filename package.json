@@ -1,15 +1,15 @@
 {
   "name": "canvas",
   "version": "1.0.0",
-  "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test tests/*.test.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Interactive 2D, 3D and freehand shape studio using JavaScript, Canvas and Three.js",
   "dependencies": {
     "three": "^0.169.0"
-  }
+  },
+  "type": "module"
 }
