@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore 2D and 3D shapes, sketch freely, and save your creations in a browser-based JavaScript studio.">
+  <meta name="theme-color" content="#111827">
+  <link rel="icon" href="./favicon.ico">
+  <link rel="stylesheet" href="./studio.css">
+  <title>FormFanz | Interactive Shape Studio</title>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" src="./studio.js"></script>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <a class="brand" href="./index.html"><span aria-hidden="true" class="brand-icon">✳</span><span>form<span class="brand-accent">fanz</span></span></a>
+      <nav aria-label="Main navigation">
+        <a href="#workspace" aria-current="page">Shape studio</a>
+        <a href="#how-it-works">About</a>
+        <a href="https://github.com/0fatma5/FoRMFanzywebsite" target="_blank" rel="noopener noreferrer">Source code ↗</a>
+      </nav>
+    </header>
+    <main>
+      <section class="hero">
+        <div>
+          <p class="eyebrow"><span class="pulse"></span> A playground for creative geometry</p>
+          <h1>Make shapes.<br><span>Play with dimensions.</span></h1>
+          <p class="intro">From simple sketches to rotating 3D objects, explore geometry with a few clicks. Built with JavaScript, Canvas and Three.js.</p>
+          <a class="hero-link" href="#workspace">Start creating <span aria-hidden="true">↘</span></a>
+        </div>
+        <div class="hero-illustration" aria-hidden="true"><span class="orb"></span><span class="orbit orbit-a"></span><span class="orbit orbit-b"></span><span class="dot dot-one"></span><span class="dot dot-two"></span></div>
+      </section>
+      <section id="workspace" aria-labelledby="workspace-title">
+        <div class="section-header">
+          <div><p class="eyebrow">THE WORKSPACE</p><h2 id="workspace-title">Shape studio</h2></div>
+          <p>Choose a mode, customize your creation, and download it as a PNG.</p>
+        </div>
+        <div class="studio-layout">
+          <aside class="panel controls" aria-label="Drawing controls">
+            <div class="panel-top"><span class="section-number">01</span><h3>Create</h3></div>
+            <fieldset class="mode-switch"><legend>Drawing mode</legend><div class="mode-buttons" role="group" aria-label="Choose drawing mode">
+              <button type="button" data-mode="2d" aria-pressed="true">2D shapes</button>
+              <button type="button" data-mode="3d" aria-pressed="false">3D shapes</button>
+              <button type="button" data-mode="sketch" aria-pressed="false">Free draw</button>
+            </div></fieldset>
+            <label class="control-field" for="shape"><span>Shape</span><select id="shape"></select></label>
+            <label class="control-field" for="color"><span>Color</span><span class="color-row"><input id="color" type="color" value="#7357ef"><output id="color-label" for="color">#7357EF</output></span></label>
+            <label class="control-field" for="size"><span id="size-label">Shape size</span><span class="range-row"><input id="size" type="range" min="15" max="160" value="75" step="5"><output id="size-value" for="size">75</output></span></label>
+            <label class="checkbox-row" for="rotate"><input id="rotate" type="checkbox" checked><span>Auto-rotate 3D shape</span></label>
+            <div class="button-stack">
+              <button id="save" type="button" class="primary">Download PNG <span aria-hidden="true">↓</span></button>
+              <button id="reset" type="button" class="secondary">Reset canvas</button>
+            </div>
+            <p class="privacy"><span aria-hidden="true">◎</span> Drawings stay in your browser. No account or upload required.</p>
+          </aside>
+          <section class="panel preview" aria-labelledby="preview-heading">
+            <div class="preview-heading"><div><span class="section-number">02</span><h3 id="preview-heading">Live preview</h3></div><span class="preview-pill" id="mode-label">2D canvas</span></div>
+            <div class="stage" id="stage">
+              <canvas id="canvas-2d" width="900" height="630" aria-label="2D drawing preview">Your browser does not support Canvas.</canvas>
+              <canvas id="canvas-3d" class="hidden" aria-label="3D shape preview">Your browser does not support WebGL.</canvas>
+              <p class="stage-error hidden" id="stage-error" role="alert"></p>
+            </div>
+            <div class="preview-bottom"><p id="status" role="status" aria-live="polite">Choose a shape to begin.</p><span>900 × 630 preview</span></div>
+          </section>
+        </div>
+      </section>
+      <section class="how" id="how-it-works"><div><p class="eyebrow">HOW IT WORKS</p><h2>Simple tools. Endless experiments.</h2></div><div class="feature-grid"><article><span>01 /</span><h3>Pick your mode</h3><p>Choose classic geometry, explore 3D models, or sketch freely with your cursor or finger.</p></article><article><span>02 /</span><h3>Make it yours</h3><p>Adjust colors and dimensions and watch the preview respond instantly.</p></article><article><span>03 /</span><h3>Save your work</h3><p>Export a PNG straight from your browser. Your artwork stays on your device.</p></article></div></section>
+    </main>
+    <footer>FormFanz · A JavaScript, Canvas & Three.js creative coding project <span>© 2026</span></footer>
+  </div>
+</body>
+</html>
